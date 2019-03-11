@@ -1,28 +1,31 @@
-import pdb
 import collections
+import logging
+from matplotlib import pyplot
 import numpy
 import sys
-from matplotlib import pyplot
 
-Indices = {'Lat': 3, 'Long': 4, 'Hr': 5, 'Ele': 10, 'Power': 11}
+import csvparse
+import gpxparse
+
 Inf = float('inf')
 
 
-def InvalidLine(line):
-  for i in Indices.values():
-    if line[i] != '':
-      return False
-  return True
-
-
 def DurFormat(s):
-  return '{}s'.format(s) if s < 60 else '{}m'.format(s / 60)
+  return '{}s'.format(s) if s < 60 else '{:.0f}m'.format(s / 60)
+
+
+def TruncateLarger(l, n):
+  """Return elementes in sorted l that are no larger than n."""
+  for i, x in enumerate(l):
+    if x > n:
+      return l[:i]
+  return l
 
 
 def PlotPower(data, title):
   # Params
   N = (5,)
-  StartMin = 0
+  StartMin = 0.
   EndMin = Inf
   BinWidth = 10.
 
@@ -49,8 +52,7 @@ def PlotPower(data, title):
   
   fig = pyplot.figure(figsize=(20, 12), dpi=200, tight_layout=True)
   ax = fig.add_subplot(2, 1, 1)
-  ax.plot((time[0], time[-1]), 200. * numpy.ones([2]), color='yellow', linewidth=3)
-  ax.plot((time[0], time[-1]), 300. * numpy.ones([2]), color='yellow', linewidth=3)
+  ax.plot((time[0], time[-1]), 238. * numpy.ones([2]), color='yellow', linewidth=3)
   ax.plot(time, power, '-', color='grey', linewidth=1)
   for n, s in power_smooth.items():
     ax.plot(time[n - 1:], s, '-', linewidth=2, label='{}_avg'.format(DurFormat(n)))
@@ -68,6 +70,7 @@ def PlotPower(data, title):
   ax.legend(loc='upper left')
   ax.set_xlabel('Time (min)')
   ax.set_ylabel('Power (W)')
+  ax.tick_params(labelright=True)
   ax.set_title(title)
 
   # 2. Plot power distribution. -------------------------------------------------------
@@ -90,23 +93,24 @@ def PlotPower(data, title):
   ax.xaxis.grid(linestyle='-', which='major')
   ax.xaxis.grid(linestyle='--', which='minor')
   ax.set_xlim(0, 400)
+  ax.set_ylim(0, 0.12)
   ax.set_xlabel('Power (W)')
   
   # 3. Plot peak power curve. -----------------------------------------------------------
-  N = [1, 5, 10, 15, 30, 45, 60, 120, 300, 600, 900, 1200, 1800]
-  for i, n in enumerate(N):
-    if len(power) < n:
-      N = N[:i]
-      break
+  N = numpy.arange(1, 3601)
+  labels = [1, 5, 10, 15, 30, 45, 60, 120, 300, 600, 900, 1200, 1800, 2400, 3000, 3600]
+  N = TruncateLarger(N, len(power))
+  labels = TruncateLarger(labels, len(power))
   power_at = [numpy.max(numpy.convolve(power, numpy.ones((n,)) / float(n), mode='valid'))
               for n in N]
   ax = fig.add_subplot(2, 2, 4)
-  ax.semilogx(N, power_at, 'o-k')
-  ax.set_xticks(N)
-  ax.set_xticklabels([DurFormat(n) for n in N])
-  ax.set_xlim(0.9, N[-1] * 1.1)
-  ax.set_ylim(0, upper_range + 40)
-  for n, p in zip(N, power_at):
+  ax.semilogx(N, power_at, '-k')
+  ax.set_xticks(labels)
+  ax.set_xticklabels([DurFormat(n) for n in labels])
+  ax.set_xlim(0.9, 4300)
+  ax.set_ylim(0, 1100)
+  for n in labels:
+    p = power_at[n - 1]
     ax.annotate('{:.0f}'.format(p), xy=(n, p + 10), color='grey', ha='center', va='bottom')
   ax.set_title('Peak power curve')
   ax.grid()
@@ -114,40 +118,24 @@ def PlotPower(data, title):
   return fig
 
 
-def PlotLoc(data):
-  lat = data['Lat']
-  lon = data['Long']
-  fig = pyplot.figure(tight_layout=True)
-  ax = fig.add_subplot(1, 1, 1)
-  ax.plot(lon, lat, '-k')
-  ax.axis('equal')
-  ax.grid()
-
-
 def Run():
-  assert(len(sys.argv) == 2)
-  
-  with open(sys.argv[1]) as f:
-    raw_data = [line.split(',') for line in f.read().split('\n') if line]
+  assert(len(sys.argv) == 3)
+  in_filename = sys.argv[1]
+  basename, ext = in_filename.split('.')
+  if ext == 'csv':
+    data = csvparse.ParseCsv(in_filename)
+  elif ext == 'gpx':
+    data = gpxparse.ParseGpx(in_filename)
 
-  captions = {key: raw_data[0][i] for key, i in Indices.items()}
-  data = collections.defaultdict(list)
-  for line in raw_data[1:]:
-    if InvalidLine(line):
-      continue
-    for key, i in Indices.items():
-      data[key].append(float(line[i]) if line[i] else 0.)
-
-  for key, seq in data.items():
-    data[key] = numpy.asarray(seq)
-    print('data[{}](shape={})={}'.format(key, data[key].shape, data[key][:5]))
-
-  basename = sys.argv[1].split('.')[0]
   fig = PlotPower(data, basename)
   filename = '{}.png'.format(basename)
-  with open(filename, 'w') as f:
-    fig.savefig(f)
-  #pyplot.show()
+  if sys.argv[2] == 'save':
+    with open(filename, 'wb') as f:
+      fig.savefig(f)
+  elif sys.argv[2] == 'plot':
+    pyplot.show()
+  else:
+    logging.error('Unknown command %s not in {plot, save}', sys.argv[2])
   
 
 if __name__ == '__main__':
