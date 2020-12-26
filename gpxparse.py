@@ -40,7 +40,10 @@ def ParseTrk(trk, poll):
       ele = ValueOrNone(trkpt.getElementsByTagName('ele')[0].firstChild.data, float)
       dt = GetTime(trkpt.getElementsByTagName('time')[0].firstChild.data)
       extensions = trkpt.getElementsByTagName('extensions')[0]
-      power = ValueOrNone(extensions.getElementsByTagName('power')[0].firstChild.data, float)
+      try:
+          power = ValueOrNone(extensions.getElementsByTagName('power')[0].firstChild.data, float)
+      except:
+          power = 0
       trkPtExtension = extensions.getElementsByTagName('gpxtpx:TrackPointExtension')[0]
       hl, cad = None, None
       if trkPtExtension:
@@ -67,7 +70,7 @@ def PointsToSequences(tracks, poll):
   max_vote = max(poll.values())
   keys = []
   for key, vote in poll.items():
-    if max_vote - vote < 10:
+    if max_vote - vote < 20:
       keys.append(key)
     else:
       logging.error('Too many missing values for %s(%d < %d)', key, vote, max_vote)

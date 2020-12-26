@@ -29,3 +29,5 @@ def ParseCsv(filename):
   for key, seq in data.items():
     data[key] = numpy.asarray(seq)
     print('data[{}](shape={})={}'.format(key, data[key].shape, data[key][:5]))
+
+  return data
