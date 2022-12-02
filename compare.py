@@ -66,13 +66,13 @@ def Run():
   assert sys.argv[3] in ('save', 'plot')
   in_filenames = sys.argv[1:-1]
   workouts = tuple(map(Parse, in_filenames))
-  fig = pyplot.figure(figsize=(25, 15), dpi=100)
+  fig = pyplot.figure(figsize=(20, 12), dpi=200)
   colors = ('blue', 'red')
   for workout, color in zip(workouts, colors):
     PlotPower(workout, fig, color)
 
   if sys.argv[-1] == 'save':
-    filename = f'{workouts[0].basename}_vs_{workout[1].basename}.png'
+    filename = f'{workouts[0].basename}_vs_{workouts[1].basename}.png'
     with open(filename, 'wb') as f:
       fig.savefig(f)
   elif sys.argv[-1] == 'plot':
