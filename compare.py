@@ -62,23 +62,24 @@ def Parse(filename):
 
 
 def Run():
-  assert len(sys.argv) == 4
-  assert sys.argv[3] in ('save', 'plot')
-  in_filenames = sys.argv[1:-1]
+  colors = ('blue', 'red', 'green', 'black', 'brown')
+  assert 4 <= len(sys.argv) <= len(colors)
+  assert sys.argv[1] in ('save', 'plot')
+  in_filenames = sys.argv[2:]
   workouts = tuple(map(Parse, in_filenames))
   fig = pyplot.figure(figsize=(20, 12), dpi=200)
-  colors = ('blue', 'red')
+  
   for workout, color in zip(workouts, colors):
     PlotPower(workout, fig, color)
 
-  if sys.argv[-1] == 'save':
-    filename = f'{workouts[0].basename}_vs_{workouts[1].basename}.png'
+  if sys.argv[1] == 'save':
+    filename = '_vs_'.join([workout.basename for workout in workouts])'
     with open(filename, 'wb') as f:
       fig.savefig(f)
-  elif sys.argv[-1] == 'plot':
+  elif sys.argv[1] == 'plot':
     pyplot.show()
   else:
-    raise ValueError(f'Unknown arg {sys.argv[2]}')
+    raise ValueError(f'Unknown arg {sys.argv[1]}')
 
 if __name__ == '__main__':
   Run()
