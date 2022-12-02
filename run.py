@@ -138,8 +138,8 @@ def PlotPower(data, title):
 
 
 def Run():
-  assert(len(sys.argv) == 3)
-  in_filename = sys.argv[1]
+  assert len(sys.argv) == 3
+  in_filename = sys.argv[-1]
   basename, ext = in_filename.split('.')
   if ext == 'csv':
     data = csvparse.ParseCsv(in_filename)
@@ -148,10 +148,10 @@ def Run():
 
   fig = PlotPower(data, basename)
   filename = '{}.png'.format(basename)
-  if sys.argv[2] == 'save':
+  if sys.argv[1] == 'save':
     with open(filename, 'wb') as f:
       fig.savefig(f)
-  elif sys.argv[2] == 'plot':
+  elif sys.argv[1] == 'plot':
     pyplot.show()
   else:
     logging.error('Unknown command %s not in {plot, save}', sys.argv[2])
