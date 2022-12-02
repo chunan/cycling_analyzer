@@ -55,7 +55,7 @@ def PlotPower(data, title):
   power_cum = numpy.cumsum(power)
   #power_cumavg = power_cum / numpy.arange(1, len(power_cum) + 1)
   print('time.shape={}'.format(time.shape))
-  
+
   fig = pyplot.figure(figsize=(20, 12), dpi=300)
   ax = fig.add_subplot(2, 1, 1)
 
@@ -114,7 +114,7 @@ def PlotPower(data, title):
   ax.set_xlim(0, min(upper_range, 550))
   ax.set_ylim(0, 0.12)
   ax.set_xlabel('Power (W)')
-  
+
   # 3. Plot peak power curve. -----------------------------------------------------------
   N = numpy.arange(1, 3601)
   labels = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1200, 1800, 3600]
@@ -155,7 +155,6 @@ def Run():
     pyplot.show()
   else:
     logging.error('Unknown command %s not in {plot, save}', sys.argv[2])
-  
 
 if __name__ == '__main__':
   Run()
